@@ -45,7 +45,7 @@ def create_tables(conn: Conn, schema: str):
 
 def create_match_queues(conn: Conn, schema: str, match_ids: list[tuple[uuid.UUID]]):
     sql = """
-        INSERT INTO match
+        INSERT INTO match_queue
         VALUES %s
         ON CONFLICT DO NOTHING
     """
@@ -53,15 +53,15 @@ def create_match_queues(conn: Conn, schema: str, match_ids: list[tuple[uuid.UUID
     _execute_values(conn, sql, schema, template, match_ids)
 
 
-def get_match_queues(conn: Conn, schema: str) -> list[uuid.UUID]:
+def get_match_queues(conn: Conn, schema: str, limit: int) -> list[uuid.UUID]:
     sql = """
         SELECT id
-        FROM match
+        FROM match_queue
         WHERE NOT is_completed
         ORDER BY rand
-        LIMIT 100
+        LIMIT %s
     """
-    rows = _execute_fetch_all(conn, sql, schema)
+    rows = _execute_fetch_all(conn, sql, schema, (limit,))
     return [r[0] for r in rows]
 
 
@@ -71,7 +71,7 @@ def update_match_queue(conn: Conn, schema: str, match_ids: list[uuid.UUID]):
         SET is_completed = true
         WHERE id IN %s
     """
-    _execute(conn, sql, schema, (match_ids,))
+    _execute(conn, sql, schema, (tuple(match_ids),))
 
 
 def create_player_queues(conn: Conn, schema: str, player_xuids: list[tuple[int]]):
@@ -84,15 +84,15 @@ def create_player_queues(conn: Conn, schema: str, player_xuids: list[tuple[int]]
     _execute_values(conn, sql, schema, template, player_xuids)
 
 
-def get_player_queue_needing_history(conn: Conn, schema: str):
+def get_player_queue_needing_history(conn: Conn, schema: str, limit: int) -> list[int]:
     sql = """
         SELECT xuid
         FROM player_queue
         WHERE NOT history
         ORDER BY rand
-        LIMIT 100
+        LIMIT %s
     """
-    rows = _execute_fetch_all(conn, sql, schema)
+    rows = _execute_fetch_all(conn, sql, schema, (limit,))
     return [r[0] for r in rows]
 
 
@@ -102,7 +102,7 @@ def update_player_queue_history(conn: Conn, schema: str, player_xuids: list[int]
         SET history = true
         WHERE xuid IN %s
     """
-    _execute(conn, sql, schema, (player_xuids,))
+    _execute(conn, sql, schema, (tuple(player_xuids),))
 
 
 def create_matches(conn: Conn, schema: str, stream: TextIO):
@@ -110,11 +110,11 @@ def create_matches(conn: Conn, schema: str, stream: TextIO):
 
 
 def create_team_stats(conn: Conn, schema: str, stream: TextIO):
-    _copy_from(conn, stream, schema, 'team_stats')
+    _copy_from(conn, stream, schema, 'team_stat')
 
 
 def create_player_stats(conn: Conn, schema: str, stream: TextIO):
-    _copy_from(conn, stream, schema, 'player_stats')
+    _copy_from(conn, stream, schema, 'player_stat')
 
 
 def create_skill(conn: Conn, schema: str, stream: TextIO):
@@ -151,6 +151,6 @@ def _copy_from(conn: Conn, stream: TextIO, schema: str, table: str):
     cur = conn.cursor()
     _set_schema(cur, schema)
     stream.seek(0)
-    cur.copy_from(stream, table)
+    cur.copy_from(stream, table, null='', sep='\t')
     conn.commit()
 

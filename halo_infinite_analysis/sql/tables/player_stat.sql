@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS player_stat (
     joined_in_progress boolean,
     left_in_progress boolean,
     present_at_completion boolean,
-    time_played smallint,
+    time_played real,
     confirmed_participation boolean,
     team_id smallint,
     score smallint,

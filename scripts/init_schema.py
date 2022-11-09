@@ -11,12 +11,11 @@ ROOT = pathlib.Path(__file__).parents[1]
 CONFIG = json.loads((ROOT / 'config.json').read_text())
 
 
-def main(schema: str):
+def main(schema: str, seed_xuid: int):
     with db.connect(**CONFIG['database']) as conn:
         db.create_schema(conn, schema)
-
-    with db.connect(**CONFIG['database']) as conn:
         db.create_tables(conn, schema)
+        db.create_player_queues(conn, schema, [(seed_xuid,)])
 
 
 if __name__ == '__main__':
@@ -24,5 +23,6 @@ if __name__ == '__main__':
     argparser.add_argument('--schema', '-s', type=str, required=True)
     args = argparser.parse_args()
 
-    main(args.schema)
+    acurtis = 2535445291321133
+    main(args.schema, acurtis)
 

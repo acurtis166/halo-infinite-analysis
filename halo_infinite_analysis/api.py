@@ -1,42 +1,65 @@
 
 import datetime as dt
 import logging
-from typing import Any, List, Tuple
+import math
+from typing import Any
 import uuid
 
+import requests.exceptions
 from spnkr.api.client import Client
-from spnkr.api.authorities.stats.models import MatchStats
+from spnkr.api.authorities.stats.models import MatchStats, PlayerMatchHistoryRecord
 from spnkr.api.authorities.skill.models import MatchSkillInfo
 from spnkr.api.enums import MatchType, PlayerType
 from spnkr import util
 
 
-def iter_matches(client: Client, xuid: str, start_date: dt.datetime, end_date: dt.datetime):
+def get_matches(client: Client, xuid: int, start_date: dt.datetime, end_date: dt.datetime) -> list[PlayerMatchHistoryRecord]:
+    out: list[PlayerMatchHistoryRecord] = []
     start = 0
     within_dates = False
     while True:
-        match_history = client.stats.get_match_history(xuid, start, match_type=MatchType.Matchmaking)
+        try:
+            match_history = client.stats.get_match_history(str(xuid), start,
+                                                           match_type=MatchType.Matchmaking)
+        except Exception as ex:
+            logging.error(f'Error in stats.get_match_history(). {xuid=}, {start=}\n{ex}')
+            start += 25
+            continue
         for match in match_history.results:
             if not within_dates:
                 if match.match_info.start_time > end_date:
                     continue
                 within_dates = True
             if match.match_info.start_time < start_date:
-                return
-            yield match
+                return out
+            out.append(match)
         start += 25
         if match_history.result_count < 25:
-            return
+            return out
 
 
-def iter_match_stats(client: Client, match_ids: List[uuid.UUID]):
-    for match_id in match_ids:
-        yield client.stats.get_match_stats(str(match_id))
+def get_match_stats(client: Client, match_id: uuid.UUID):
+    try:
+        return client.stats.get_match_stats(str(match_id))
+    except Exception as ex:
+        logging.error(f'Error in stats.get_match_stats(). {match_id=}\n{ex}')
 
 
-def iter_skills(client: Client, match_xuids: dict[uuid.UUID, list[str]]):
-    for match_id, xuids in match_xuids.items():
-        yield (match_id, client.skill.get_match_result(str(match_id), xuids))
+def get_skills(client: Client, match_id: uuid.UUID, xuids: list[str]):
+    try:
+        return (match_id, [client.skill.get_match_result(str(match_id), xuids)])
+    except requests.exceptions.HTTPError as ex:
+        if str(ex).startswith('400 Client Error: Invalid player ids'):
+            idx = math.ceil(len(xuids) / 2)
+            try:
+                first_half = client.skill.get_match_result(str(match_id), xuids[:idx])
+                second_half = client.skill.get_match_result(str(match_id), xuids[idx:])
+                return (match_id, [first_half, second_half])
+            except:
+                logging.error(f'Error in skill.get_match_result(). {match_id=}, {xuids=}\n{ex}')
+        logging.error(f'Error in skill.get_match_result(). {match_id=}, {xuids=}\n{ex}')
+    except Exception as ex:
+        logging.error(f'Error in skill.get_match_result(). {match_id=}, {xuids=}\n{ex}')
 
 
 def create_match_tab_sep_vals(match_stats: MatchStats) -> str:
@@ -82,7 +105,7 @@ def iter_team_stats_tab_sep_vals(match_stats: MatchStats):
         yield _to_tab_separated_values((
             match_stats.match_id,
             team.team_id,
-            team.outcome,
+            team.outcome.value,
             team.rank,
             core.score,
             core.personal_score,
@@ -113,14 +136,16 @@ def iter_team_stats_tab_sep_vals(match_stats: MatchStats):
 
 def iter_player_xuids(match_stats: MatchStats):
     for player in match_stats.players:
-        yield player.player_id
+        if player.player_type == PlayerType.Human:
+            yield player.player_id
 
 
 def iter_player_stats_tab_sep_vals(match_stats: MatchStats):
     for player in match_stats.players:
         if player.player_type == PlayerType.Bot:
-            continue
-        xuid = int(util.unwrap_xuid(player.player_id))
+            xuid = int(float(player.player_id[4:-1]))
+        else:
+            xuid = int(util.unwrap_xuid(player.player_id))
         pinfo = player.participation_info
         for ptstats in player.player_team_stats:
             core = ptstats.stats.core_stats
@@ -128,7 +153,7 @@ def iter_player_stats_tab_sep_vals(match_stats: MatchStats):
                 match_stats.match_id,
                 xuid,
                 player.last_team_id,
-                player.outcome,
+                player.outcome.value,
                 player.rank,
                 pinfo.first_joined_time,
                 pinfo.last_leave_time,
@@ -175,7 +200,7 @@ def iter_skill_tab_sep_vals(match_skill: MatchSkillInfo, match_id: uuid.UUID):
         sp = r.stat_performances
         yield _to_tab_separated_values((
             match_id,
-            pskill.id,
+            int(util.unwrap_xuid(pskill.id)),
             r.team_id,
             pskill.result_code,
             r.team_mmr,
@@ -186,7 +211,7 @@ def iter_skill_tab_sep_vals(match_skill: MatchSkillInfo, match_id: uuid.UUID):
         ))
 
 
-def _to_tab_separated_values(tup: Tuple[Any, ...]) -> str:
-    out = '\t'.join(str(item) for item in tup)
+def _to_tab_separated_values(tup: tuple[Any, ...]) -> str:
+    out = '\t'.join('' if item is None else str(item) for item in tup)
     return f'{out}\n'
 
