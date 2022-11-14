@@ -116,13 +116,16 @@ def main(schema: str,
 if __name__ == '__main__':
     argparser = argparse.ArgumentParser()
     argparser.add_argument('--schema', '-s', type=str, required=True)
+    argparser.add_argument('--duration', '-d', type=int, default=60)
+    argparser.add_argument('--workers', '-w', type=int, default=4)
+    argparser.add_argument('--player_batch_size', '-pb', type=int, default=4)
+    argparser.add_argument('--match_batch_size', '-mb', type=int, default=100)
     args = argparser.parse_args()
 
     # logging.basicConfig(filename='run.log', filemode='w', level=logging.ERROR)
 
-    workers = 4
     start = dt.datetime(2022, 11, 1, tzinfo=dt.timezone.utc)
     end = start + dt.timedelta(days=7)
 
-    main(args.schema, 60, workers, workers, 100, start, end)
+    main(args.schema, args.duration, args.workers, args.player_batch_size, args.match_batch_size, start, end)
 
