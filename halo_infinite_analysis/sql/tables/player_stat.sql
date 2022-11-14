@@ -1,9 +1,9 @@
-
 CREATE TABLE IF NOT EXISTS player_stat (
-    match_id uuid,
-    xuid bigint,
+    id serial PRIMARY KEY,
+    match_id int REFERENCES match (id) NOT NULL,
+    player_id int REFERENCES player (id) NOT NULL,
     last_team_id smallint,
-    outcome smallint,
+    outcome_id smallint REFERENCES outcome (id),
     rank smallint,
     first_joined_time timestamptz,
     last_leave_time timestamptz,
@@ -38,4 +38,4 @@ CREATE TABLE IF NOT EXISTS player_stat (
     vehicle_destroys smallint,
     hijacks smallint,
     max_killing_spree smallint
-)
+);

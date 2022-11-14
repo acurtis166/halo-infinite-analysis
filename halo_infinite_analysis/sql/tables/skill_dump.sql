@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS skill (
+CREATE TABLE IF NOT EXISTS skill_dump (
     match_id uuid,
     xuid bigint,
     team_id smallint,

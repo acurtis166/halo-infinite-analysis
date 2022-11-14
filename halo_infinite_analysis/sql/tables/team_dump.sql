@@ -1,8 +1,8 @@
-CREATE TABLE IF NOT EXISTS team_stat (
-    id serial PRIMARY KEY,
-    match_id int REFERENCES match (id) NOT NULL,
-    team_id smallint NOT NULL,
-    outcome_id smallint REFERENCES outcome (id),
+
+CREATE TABLE IF NOT EXISTS team_dump (
+    match_id uuid,
+    team_id smallint,
+    outcome smallint,
     rank smallint,
     score smallint,
     personal_score integer,
@@ -28,6 +28,4 @@ CREATE TABLE IF NOT EXISTS team_stat (
     vehicle_destroys smallint,
     hijacks smallint,
     max_killing_spree smallint
-);
-
-CREATE UNIQUE INDEX team_stat_idx_match_team ON team_stat (match_id, team_id);
+)
