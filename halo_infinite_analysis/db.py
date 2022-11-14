@@ -155,11 +155,34 @@ def delete_dumped_data(conn: Conn, schema: str):
     _execute(conn, sql, schema)
 
 
+def get_game_variants(conn: Conn, schema: str) -> list[tuple[uuid.UUID, uuid.UUID, str | None]]:
+    return _get_metadata(conn, schema, 'game_variant')
+
+
+def get_map_variants(conn: Conn, schema: str) -> list[tuple[uuid.UUID, uuid.UUID, str | None]]:
+    return _get_metadata(conn, schema, 'map_variant')
+
+
+def get_playlists(conn: Conn, schema: str) -> list[tuple[uuid.UUID, uuid.UUID, str | None]]:
+    return _get_metadata(conn, schema, 'playlist')
+
+
+def get_playlist_map_mode_pairs(conn: Conn, schema: str) -> list[tuple[uuid.UUID, uuid.UUID, str | None]]:
+    return _get_metadata(conn, schema, 'playlist_map_mode_pair')
+
+
+def update_metadata(conn: Conn, schema: str, table: str, records: list[tuple[str, uuid.UUID, uuid.UUID]]):
+    ident = psycopg2.sql.Identifier(table)
+    txt = 'UPDATE {} SET name = %s WHERE asset_id = %s AND version_id = %s'
+    sql = psycopg2.sql.SQL(txt).format(ident)  # type: ignore
+    _execute_many(conn, sql, schema, records)
+
+
 def _set_schema(cur: Cursor, schema: str):
     cur.execute('SET search_path = %s', (schema,))
 
 
-def _execute(conn: Conn, sql: str, schema: str | None = None, params: tuple[Any, ...] | None = None):
+def _execute(conn: Conn, sql: str | psycopg2.sql.Composable, schema: str | None = None, params: tuple[Any, ...] | None = None):
     cur = conn.cursor()
     if schema is not None:
         _set_schema(cur, schema)
@@ -167,11 +190,26 @@ def _execute(conn: Conn, sql: str, schema: str | None = None, params: tuple[Any,
     conn.commit()
 
 
-def _execute_fetch_all(conn: Conn, sql:str, schema: str, params: tuple[Any, ...] | None = None):
+def _execute_many(conn: Conn, sql: str | psycopg2.sql.Composable, schema: str, params: list[tuple[Any, ...]]):
+    cur = conn.cursor()
+    _set_schema(cur, schema)
+    cur.executemany(sql, params)
+    conn.commit()
+
+
+def _execute_fetch_all(conn: Conn, sql: str | psycopg2.sql.Composable, schema: str, params: tuple[Any, ...] | None = None):
     cur = conn.cursor()
     _set_schema(cur, schema)
     cur.execute(sql, params)
     return cur.fetchall()
+
+
+def _get_metadata(conn: Conn, schema: str, table: str) -> list[tuple[uuid.UUID, uuid.UUID, str | None]]:
+    ident = psycopg2.sql.Identifier(table)
+    txt = 'SELECT DISTINCT asset_id, version_id, name FROM {}'
+    sql = psycopg2.sql.SQL(txt).format(ident)  # type: ignore
+    rows = _execute_fetch_all(conn, sql, schema)
+    return [(r[0], r[1], r[2]) for r in rows]
 
 
 def _execute_values(conn: Conn, sql: str, schema: str, template: str, values: list[tuple[Any, ...]]):
