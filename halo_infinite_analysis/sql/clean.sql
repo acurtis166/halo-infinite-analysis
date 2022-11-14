@@ -52,7 +52,7 @@ SELECT DISTINCT
     '<unknown>'
 FROM match_dump
 WHERE
-    NOT EXISTS (SELECT 1 FROM lifecycle_mode WHERE id = match_dump.lifecycle_mode_id);
+    NOT EXISTS (SELECT 1 FROM lifecycle_mode WHERE id = match_dump.lifecycle_mode);
 
 
 INSERT INTO game_variant_category
@@ -61,7 +61,7 @@ SELECT DISTINCT
     '<unknown>'
 FROM match_dump
 WHERE
-    NOT EXISTS (SELECT 1 FROM game_variant_category WHERE id = match_dump.game_variant_category_id);
+    NOT EXISTS (SELECT 1 FROM game_variant_category WHERE id = match_dump.game_variant_category);
 
 
 INSERT INTO playlist_experience
@@ -70,10 +70,24 @@ SELECT DISTINCT
     '<unknown>'
 FROM match_dump
 WHERE
-    NOT EXISTS (SELECT 1 FROM playlist_experience WHERE id = match_dump.playlist_experience_id);
+    NOT EXISTS (SELECT 1 FROM playlist_experience WHERE id = match_dump.playlist_experience);
 
 
-INSERT INTO match
+INSERT INTO match (
+    match_id,
+    start_time,
+    end_time,
+    duration,
+    lifecycle_mode_id,
+    game_variant_category_id,
+    level_id,
+    map_variant_id,
+    game_variant_id,
+    playlist_id,
+    playlist_experience_id,
+    playlist_map_mode_pair_id,
+    playable_duration
+)
 SELECT DISTINCT
     m.id,
     m.start_time,
@@ -95,10 +109,10 @@ LEFT JOIN game_variant gv ON m.game_variant_asset_id = gv.asset_id AND m.game_va
 LEFT JOIN playlist p ON m.playlist_asset_id = p.asset_id AND m.playlist_version_id = p.version_id
 LEFT JOIN playlist_map_mode_pair mmp ON m.playlist_map_mode_pair_asset_id = mmp.asset_id AND m.playlist_map_mode_pair_version_id = mmp.version_id
 WHERE
-    NOT EXISTS (SELECT 1 FROM match WHERE id = m.id);
+    NOT EXISTS (SELECT 1 FROM match WHERE match_id = m.id);
 
 
-INSERT INTO player
+INSERT INTO player (xuid)
 SELECT DISTINCT
     xuid
 FROM player_dump
@@ -106,7 +120,46 @@ WHERE
     NOT EXISTS (SELECT 1 FROM player WHERE xuid = player_dump.xuid);
 
 
-INSERT INTO player_stat
+INSERT INTO player_stat (
+    match_id,
+    player_id,
+    last_team_id,
+    outcome_id,
+    rank,
+    first_joined_time,
+    last_leave_time,
+    present_at_beginning,
+    joined_in_progress,
+    left_in_progress,
+    present_at_completion,
+    time_played,
+    confirmed_participation,
+    team_id,
+    score,
+    personal_score,
+    rounds_won,
+    rounds_lost,
+    rounds_tied,
+    kills,
+    deaths,
+    assists,
+    suicides,
+    betrayals,
+    grenade_kills,
+    headshot_kills,
+    melee_kills,
+    power_weapon_kills,
+    shots_fired,
+    shots_hit,
+    damage_dealt,
+    damage_taken,
+    callout_assists,
+    driver_assists,
+    emp_assists,
+    vehicle_destroys,
+    hijacks,
+    max_killing_spree
+)
 SELECT DISTINCT
     m.id,
     p.id,
@@ -153,7 +206,36 @@ WHERE
     NOT EXISTS (SELECT 1 FROM player_stat WHERE match_id = m.id AND player_id = p.id AND team_id = pd.team_id);
 
 
-INSERT INTO team_stat
+INSERT INTO team_stat (
+    match_id,
+    team_id,
+    outcome_id,
+    rank,
+    score,
+    personal_score,
+    rounds_won,
+    rounds_lost,
+    rounds_tied,
+    kills,
+    deaths,
+    assists,
+    suicides,
+    betrayals,
+    grenade_kills,
+    headshot_kills,
+    melee_kills,
+    power_weapon_kills,
+    shots_fired,
+    shots_hit,
+    damage_dealt,
+    damage_taken,
+    callout_assists,
+    driver_assists,
+    emp_assists,
+    vehicle_destroys,
+    hijacks,
+    max_killing_spree
+)
 SELECT DISTINCT
     m.id,
     td.team_id,
@@ -189,7 +271,12 @@ WHERE
     NOT EXISTS (SELECT 1 FROM team_stat WHERE match_id = m.id AND team_id = td.team_id);
 
 
-INSERT INTO team_skill
+INSERT INTO team_skill (
+    match_id,
+    team_id,
+    result_code,
+    mmr
+)
 SELECT DISTINCT
     m.id,
     sd.team_id,
@@ -201,7 +288,16 @@ WHERE
     NOT EXISTS (SELECT 1 FROM team_skill WHERE match_id = m.id AND team_id = sd.team_id);
 
 
-INSERT INTO player_skill
+INSERT INTO player_skill (
+    match_id,
+    player_id,
+    team_id,
+    result_code,
+    pre_match_csr,
+    post_match_csr,
+    kills_expected,
+    deaths_expected
+)
 SELECT DISTINCT
     m.id,
     p.id,

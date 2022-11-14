@@ -14,10 +14,33 @@ import psycopg2.sql
 Conn = psycopg2.extensions.connection
 Cursor = psycopg2.extensions.cursor
 
-SQL_DIR = pathlib.Path(__file__).parent / 'sql'
-TABLES_DIR = SQL_DIR / 'tables'
-
 psycopg2.extras.register_uuid()
+
+SQL_DIR = pathlib.Path(__file__).parent / 'sql'
+TABLE_DIR = SQL_DIR / 'tables'
+TABLE_CREATE_ORDER = (
+    'game_variant_category',
+    'game_variant',
+    'level',
+    'lifecycle_mode',
+    'map_variant',
+    'match_dump',
+    'match_queue',
+    'outcome',
+    'player_dump',
+    'player_queue',
+    'player',
+    'playlist_experience',
+    'playlist_map_mode_pair',
+    'playlist',
+    'skill_dump',
+    'team_dump',
+    'match',
+    'player_skill',
+    'player_stat',
+    'team_skill',
+    'team_stat',
+)
 
 
 @contextlib.contextmanager
@@ -38,8 +61,9 @@ def create_schema(conn: Conn, schema: str):
 def create_tables(conn: Conn, schema: str):
     cur = conn.cursor()
     _set_schema(cur, schema)
-    for fpath in TABLES_DIR.iterdir():
-        cur.execute(fpath.read_text())
+    for name in TABLE_CREATE_ORDER:
+        pth = TABLE_DIR / f'{name}.sql'
+        cur.execute(pth.read_text())
     conn.commit()
 
 
@@ -106,19 +130,29 @@ def update_player_queue_history(conn: Conn, schema: str, player_xuids: list[int]
 
 
 def create_matches(conn: Conn, schema: str, stream: TextIO):
-    _copy_from(conn, stream, schema, 'match')
+    _copy_from(conn, stream, schema, 'match_dump')
 
 
 def create_team_stats(conn: Conn, schema: str, stream: TextIO):
-    _copy_from(conn, stream, schema, 'team_stat')
+    _copy_from(conn, stream, schema, 'team_dump')
 
 
 def create_player_stats(conn: Conn, schema: str, stream: TextIO):
-    _copy_from(conn, stream, schema, 'player_stat')
+    _copy_from(conn, stream, schema, 'player_dump')
 
 
 def create_skill(conn: Conn, schema: str, stream: TextIO):
-    _copy_from(conn, stream, schema, 'skill')
+    _copy_from(conn, stream, schema, 'skill_dump')
+
+
+def clean_dumped_data(conn: Conn, schema: str):
+    sql = (SQL_DIR / 'clean.sql').read_text()
+    _execute(conn, sql, schema)
+
+
+def delete_dumped_data(conn: Conn, schema: str):
+    sql = (SQL_DIR / 'delete.sql').read_text()
+    _execute(conn, sql, schema)
 
 
 def _set_schema(cur: Cursor, schema: str):
