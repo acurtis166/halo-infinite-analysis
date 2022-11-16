@@ -112,9 +112,10 @@ WHERE
     NOT EXISTS (SELECT 1 FROM match WHERE match_id = m.id);
 
 
-INSERT INTO player (xuid)
+INSERT INTO player (xuid, is_human)
 SELECT DISTINCT
-    xuid
+    xuid,
+    xuid > 100000
 FROM player_dump
 WHERE
     NOT EXISTS (SELECT 1 FROM player WHERE xuid = player_dump.xuid);

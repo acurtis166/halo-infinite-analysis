@@ -1,0 +1,65 @@
+/**/
+
+CREATE OR REPLACE VIEW vw_player AS
+
+SELECT
+    ps.id,
+    m.id AS match_id,
+    p.id AS player_id,
+    p.xuid,
+    m.start_time AS match_start_time,
+    m.duration AS match_duration,
+    m.lifecycle_mode,
+    m.game_variant_category,
+    m.map_variant,
+    m.game_variant,
+    m.playlist,
+    m.playlist_experience,
+    m.map_mode_pair,
+    ps.last_team_id,
+    o.name AS outcome,
+    ps.rank,
+    ps.first_joined_time,
+    ps.last_leave_time,
+    ps.present_at_beginning,
+    ps.joined_in_progress,
+    ps.left_in_progress,
+    ps.present_at_completion,
+    ps.time_played,
+    ps.confirmed_participation,
+    ps.team_id,
+    ps.score,
+    ps.personal_score,
+    ps.rounds_won,
+    ps.rounds_lost,
+    ps.rounds_tied,
+    ps.kills,
+    ps.deaths,
+    ps.assists,
+    ps.suicides,
+    ps.betrayals,
+    ps.grenade_kills,
+    ps.headshot_kills,
+    ps.melee_kills,
+    ps.power_weapon_kills,
+    ps.shots_fired,
+    ps.shots_hit,
+    ps.damage_dealt,
+    ps.damage_taken,
+    ps.callout_assists,
+    ps.driver_assists,
+    ps.emp_assists,
+    ps.vehicle_destroys,
+    ps.hijacks,
+    ps.max_killing_spree,
+    psk.pre_match_csr,
+    psk.post_match_csr,
+    psk.kills_expected,
+    psk.deaths_expected,
+    tsk.mmr AS team_mmr
+FROM player_stat ps
+JOIN vw_match m ON ps.match_id = m.id
+JOIN player p ON ps.player_id = p.id
+JOIN outcome o ON ps.outcome_id = o.id
+LEFT JOIN player_skill psk ON ps.match_id = psk.match_id AND ps.player_id = psk.player_id
+LEFT JOIN team_skill tsk ON ps.match_id = tsk.match_id AND ps.team_id = tsk.team_id
