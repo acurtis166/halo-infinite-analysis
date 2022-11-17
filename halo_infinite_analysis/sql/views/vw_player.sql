@@ -36,6 +36,8 @@ SELECT
     ps.kills,
     ps.deaths,
     ps.assists,
+    ps.kills - ps.deaths + (ps.assists / 3) AS kda,
+    ps.kills / greatest(ps.deaths, 1) AS kd_ratio,
     ps.suicides,
     ps.betrayals,
     ps.grenade_kills,
