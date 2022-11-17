@@ -1,6 +1,7 @@
 
 
 import contextlib
+import datetime as dt
 import pathlib
 from typing import Any, TextIO
 import uuid
@@ -17,7 +18,6 @@ Cursor = psycopg2.extensions.cursor
 psycopg2.extras.register_uuid()
 
 SQL_DIR = pathlib.Path(__file__).parent / 'sql'
-TABLE_DIR = SQL_DIR / 'tables'
 TABLE_CREATE_ORDER = (
     'game_variant_category',
     'game_variant',
@@ -41,6 +41,11 @@ TABLE_CREATE_ORDER = (
     'team_skill',
     'team_stat',
 )
+VIEW_CREATE_ORDER = (
+    'vw_match',
+    'vw_player',
+    'vw_team',
+)
 
 
 @contextlib.contextmanager
@@ -62,7 +67,16 @@ def create_tables(conn: Conn, schema: str):
     cur = conn.cursor()
     _set_schema(cur, schema)
     for name in TABLE_CREATE_ORDER:
-        pth = TABLE_DIR / f'{name}.sql'
+        pth = SQL_DIR / f'tables/{name}.sql'
+        cur.execute(pth.read_text())
+    conn.commit()
+
+
+def create_views(conn: Conn, schema: str):
+    cur = conn.cursor()
+    _set_schema(cur, schema)
+    for name in VIEW_CREATE_ORDER:
+        pth = SQL_DIR / f'views/{name}.sql'
         cur.execute(pth.read_text())
     conn.commit()
 
@@ -176,6 +190,23 @@ def update_metadata(conn: Conn, schema: str, table: str, records: list[tuple[str
     txt = 'UPDATE {} SET name = %s WHERE asset_id = %s AND version_id = %s'
     sql = psycopg2.sql.SQL(txt).format(ident)  # type: ignore
     _execute_many(conn, sql, schema, records)
+
+
+def get_latest_match_date(conn: Conn, schema: str) -> dt.datetime | None:
+    sql = """
+        SELECT max(start_time)
+        FROM (
+            SELECT start_time
+            FROM match_dump
+
+            UNION ALL
+
+            SELECT start_time
+            FROM match
+        ) t
+    """
+    rows = _execute_fetch_all(conn, sql, schema)
+    return rows[0][0]
 
 
 def _set_schema(cur: Cursor, schema: str):

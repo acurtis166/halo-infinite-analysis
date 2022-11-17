@@ -8,4 +8,5 @@ VALUES
     (2, 'Arena'),
     (3, 'BigTeamBattle'),
     (4, 'PVE'),
-    (5, 'Featured');
+    (5, 'Featured')
+ON CONFLICT DO NOTHING;

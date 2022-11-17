@@ -30,4 +30,4 @@ CREATE TABLE IF NOT EXISTS team_stat (
     max_killing_spree smallint
 );
 
-CREATE UNIQUE INDEX team_stat_idx_match_team ON team_stat (match_id, team_id);
+CREATE UNIQUE INDEX IF NOT EXISTS team_stat_idx_match_team ON team_stat (match_id, team_id);

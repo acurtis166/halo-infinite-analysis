@@ -6,4 +6,5 @@ CREATE TABLE IF NOT EXISTS lifecycle_mode (
 INSERT INTO lifecycle_mode
 VALUES
     (1, 'Custom'),
-    (3, 'Matchmade');
+    (3, 'Matchmade')
+ON CONFLICT DO NOTHING;

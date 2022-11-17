@@ -8,4 +8,5 @@ VALUES
     (1, 'Tie'),
     (2, 'Win'),
     (3, 'Loss'),
-    (4, 'DidNotFinish');
+    (4, 'DidNotFinish')
+ON CONFLICT DO NOTHING;

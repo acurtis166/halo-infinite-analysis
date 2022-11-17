@@ -5,4 +5,4 @@ CREATE TABLE IF NOT EXISTS map_variant (
     name text
 );
 
-CREATE UNIQUE INDEX map_variant_idx_asset_version ON map_variant (asset_id, version_id);
+CREATE UNIQUE INDEX IF NOT EXISTS map_variant_idx_asset_version ON map_variant (asset_id, version_id);

@@ -22,4 +22,5 @@ VALUES
     (24, 'GunGame'),
     (25, 'Grifball'),
     (32, 'TestEngine'),
-    (39, 'LandGrab');
+    (39, 'LandGrab')
+ON CONFLICT DO NOTHING;

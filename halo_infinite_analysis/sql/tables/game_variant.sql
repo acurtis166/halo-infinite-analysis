@@ -5,4 +5,4 @@ CREATE TABLE IF NOT EXISTS game_variant (
     name text
 );
 
-CREATE UNIQUE INDEX game_variant_idx_asset_version ON game_variant (asset_id, version_id);
+CREATE UNIQUE INDEX IF NOT EXISTS game_variant_idx_asset_version ON game_variant (asset_id, version_id);

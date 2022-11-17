@@ -6,4 +6,4 @@ CREATE TABLE IF NOT EXISTS team_skill (
     mmr real
 );
 
-CREATE UNIQUE INDEX team_skill_idx_match_team ON team_skill (match_id, team_id);
+CREATE UNIQUE INDEX IF NOT EXISTS team_skill_idx_match_team ON team_skill (match_id, team_id);

@@ -5,4 +5,4 @@ CREATE TABLE IF NOT EXISTS playlist (
     name text
 );
 
-CREATE UNIQUE INDEX playlist_idx_asset_version ON playlist (asset_id, version_id);
+CREATE UNIQUE INDEX IF NOT EXISTS playlist_idx_asset_version ON playlist (asset_id, version_id);

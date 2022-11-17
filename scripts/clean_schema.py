@@ -34,6 +34,7 @@ def main(schema: str):
         print('Removing data from staging tables')
         db.delete_dumped_data(conn, schema)
 
+        # TODO pull these from another schema?
         print('Retrieving metadata information')
         db_client_funcs = (
             ('game_variant', db.get_game_variants, client.ugc_discovery.get_ugc_game_variant),

@@ -10,4 +10,4 @@ CREATE TABLE IF NOT EXISTS player_skill (
     deaths_expected real
 );
 
-CREATE UNIQUE INDEX player_skill_idx_match_player ON player_skill (match_id, player_id);
+CREATE UNIQUE INDEX IF NOT EXISTS player_skill_idx_match_player ON player_skill (match_id, player_id);

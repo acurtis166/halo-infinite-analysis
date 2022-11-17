@@ -15,6 +15,7 @@ def main(schema: str, seed_xuid: int):
     with db.connect(**CONFIG['database']) as conn:
         db.create_schema(conn, schema)
         db.create_tables(conn, schema)
+        db.create_views(conn, schema)
         db.create_player_queues(conn, schema, [(seed_xuid,)])
 
 
